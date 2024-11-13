@@ -53,9 +53,11 @@ namespace LLama.Unittest {
                 _batch.Add(token: tokens[i + 2], pos: tokens.Length + i + 2, sequence: LLamaSeqId.Zero, logits: true);
                 DecodeAndClear(context);
 
-                // Test raw sampling
+                var expected = tokens[i + 3];
                 var logits = GetLogits(context, totalSequences: 1);
-                Assert.Equal(tokens[i + 3], TensorPrimitives.IndexOfMax(logits));
+
+                // Test raw sampling
+                Assert.Equal(expected, TensorPrimitives.IndexOfMax(logits));
 
                 // Test native sampling with `LLamaTokenDataArrayNative`.
                 var array = LLamaTokenDataArray.Create(logits);
@@ -66,7 +68,7 @@ namespace LLama.Unittest {
                     {
                         rawLogits[(int) cur_p.Data[j].ID] = cur_p.Data[j].Logit;
                     }
-                    Assert.Equal(tokens[i + 3], TensorPrimitives.IndexOfMax(rawLogits));
+                    Assert.Equal(expected, TensorPrimitives.IndexOfMax(rawLogits));
                 }
 
                 // Test sampling chain
@@ -74,7 +76,7 @@ namespace LLama.Unittest {
                     using var _ = LLamaTokenDataArrayNative.Create(array, out var cur_p);
                     using var chain = CreateChain(context.NativeHandle);
                     chain.Apply(ref cur_p);
-                    Assert.Equal(tokens[i + 3], cur_p.Data[(int) cur_p.Selected].ID);
+                    Assert.Equal(expected, cur_p.Data[(int) cur_p.Selected].ID);
                 }
 
                 // Test logit bias
@@ -82,7 +84,7 @@ namespace LLama.Unittest {
                     using var _ = LLamaTokenDataArrayNative.Create(array, out var cur_p);
                     using var chain = CreateChain(context.NativeHandle, logitBias);
                     chain.Apply(ref cur_p);
-                    Assert.NotEqual(tokens[i + 3], cur_p.Data[(int) cur_p.Selected].ID);
+                    Assert.NotEqual(expected, cur_p.Data[(int) cur_p.Selected].ID);
                 }
             }
         }
@@ -121,13 +123,15 @@ namespace LLama.Unittest {
                 }
                 DecodeAndClear(context);
 
-                // Test raw sampling
+                var expected = tokens[i + 3];
                 var all_logits = GetLogits(context, totalSequences: batch_count);
+
                 for (int b = 0; b < batch_count; b++)
                 {
                     var logits = all_logits.Slice(b * _model.VocabCount, _model.VocabCount);
 
-                    Assert.Equal(tokens[i + 3], TensorPrimitives.IndexOfMax(logits));
+                    // Test raw sampling
+                    Assert.Equal(expected, TensorPrimitives.IndexOfMax(logits));
 
                     // Test native sampling with `LLamaTokenDataArrayNative`.
                     var array = LLamaTokenDataArray.Create(logits);
@@ -138,7 +142,7 @@ namespace LLama.Unittest {
                         {
                             rawLogits[(int) cur_p.Data[j].ID] = cur_p.Data[j].Logit;
                         }
-                        Assert.Equal(tokens[i + 3], TensorPrimitives.IndexOfMax(rawLogits));
+                        Assert.Equal(expected, TensorPrimitives.IndexOfMax(rawLogits));
                     }
 
                     // Test sampling chain
@@ -146,7 +150,7 @@ namespace LLama.Unittest {
                         using var _ = LLamaTokenDataArrayNative.Create(array, out var cur_p);
                         using var chain = CreateChain(context.NativeHandle);
                         chain.Apply(ref cur_p);
-                        Assert.Equal(tokens[i + 3], cur_p.Data[(int) cur_p.Selected].ID);
+                        Assert.Equal(expected, cur_p.Data[(int) cur_p.Selected].ID);
                     }
 
                     // Test logit bias
@@ -154,7 +158,7 @@ namespace LLama.Unittest {
                         using var _ = LLamaTokenDataArrayNative.Create(array, out var cur_p);
                         using var chain = CreateChain(context.NativeHandle, logitBias);
                         chain.Apply(ref cur_p);
-                        Assert.NotEqual(tokens[i + 3], cur_p.Data[(int) cur_p.Selected].ID);
+                        Assert.NotEqual(expected, cur_p.Data[(int) cur_p.Selected].ID);
                     }
                 }
             }
